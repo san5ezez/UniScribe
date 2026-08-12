@@ -50,7 +50,7 @@ jobs:
         files: app/build/outputs/apk/debug/app-debug.apk
         name: UniScribe Release ${{ github.ref_name }}
         body: |
-          Обновление!
+          ####Обновление
         draft: false
         prerelease: false
 
