@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniScribe — Умный Конспект Лекций с ИИ</title>
+    <meta name="description" content="Умный диктофон и автоматический конспектировщик лекций на базе Google Gemini 2.5 Flash API для Android">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: #eff6ff;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-card: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --border: #334155;
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 24px;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .btn-cta {
+            background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 99px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        /* Hero Section */
+        .hero {
+            max-width: 1200px;
+            margin: 60px auto 80px auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-card);
+        }
+
+        /* Interactive Phone Frame Mockup */
+        .phone-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .phone-frame {
+            width: 320px;
+            height: 640px;
+            background: #090d16;
+            border-radius: 44px;
+            border: 8px solid #334155;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(59, 130, 246, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-notch {
+            width: 120px;
+            height: 20px;
+            background: #334155;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 10;
+        }
+
+        .phone-screen {
+            padding: 28px 16px 16px 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #0f172a;
+            color: white;
+            font-size: 12px;
+        }
+
+        .app-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .app-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #60a5fa;
+        }
+
+        .online-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .card-demo {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .audio-wave {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 24px;
+            margin: 12px 0;
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--primary);
+            border-radius: 4px;
+            animation: pulse 1.2s infinite ease-in-out alternate;
+        }
+
+        .bar:nth-child(2) { animation-delay: 0.2s; }
+        .bar:nth-child(3) { animation-delay: 0.4s; }
+        .bar:nth-child(4) { animation-delay: 0.1s; }
+        .bar:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes pulse {
+            0% { height: 6px; opacity: 0.4; }
+            100% { height: 22px; opacity: 1; }
+        }
+
+        .tag-chip {
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.2);
+            color: #c084fc;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        /* Features Section */
+        .features {
+            max-width: 1200px;
+            margin: 0 auto 100px auto;
+            padding: 0 24px;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 50px auto;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .grid-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 18px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Interactive Live Demo Component */
+        .demo-section {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 80px 24px;
+            margin-bottom: 100px;
+        }
+
+        .demo-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 32px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .demo-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .demo-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .demo-output {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #e2e8f0;
+            min-height: 160px;
+        }
+
+        /* Footer */
+        footer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        @media (max-width: 868px) {
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .hero-badge {
+                margin: 0 auto 20px auto;
+            }
+            .hero-actions {
+                justify-content: center;
+            }
+            footer {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">🎙️</div>
+                UniScribe
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Возможности</a></li>
+                <li><a href="#demo">Интерактивный конспект</a></li>
+                <li><a href="https://github.com/san4ezez/UniScribe" target="_blank">GitHub</a></li>
+            </ul>
+            <a href="https://github.com/san4ezez/UniScribe/releases" class="btn-cta">
+                <span>Скачать APK</span>
+                <span>↓</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div>
+            <div class="hero-badge">
+                <span>✨ Gemini 2.5 Flash Multimodal Inside</span>
+            </div>
+            <h1>Умный конспект лекций <span>на базе ИИ</span></h1>
+            <p>UniScribe автоматически записывает аудио лекций, распознает речь диктора и превращает её в структурированные конспекты с глубокой аналитикой текста.</p>
+            <div class="hero-actions">
+                <a href="https://github.com/san4ezez/UniScribe/releases" class="btn-cta">
+                    <span>Скачать для Android</span>
+                </a>
+                <a href="https://github.com/san4ezez/UniScribe" target="_blank" class="btn-secondary">
+                    <span>Исходный код (GitHub)</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="phone-container">
+            <div class="phone-frame">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="app-topbar">
+                        <span class="app-title">UniScribe</span>
+                        <span class="online-badge">● Онлайн</span>
+                    </div>
+
+                    <div class="card-demo">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span class="tag-chip">Высшая математика</span>
+                            <span style="font-size: 10px; color: var(--text-muted);">45 мин</span>
+                        </div>
+                        <div class="card-title">Интегралы и дифференциальные уравнения</div>
+                        <div class="card-desc">Лекция №4. Разбор неопределенных интегралов и метода подстановки.</div>
+                        <div class="audio-wave">
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="card-demo" style="background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">
+                        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">📊 Аналитика речи</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px;">
+                            <div>• Слов: <strong>1,420</strong></div>
+                            <div>• Время чтения: <strong>~7 мин</strong></div>
+                            <div>• Темп: <strong>125 слов/мин</strong></div>
+                            <div>• Ключевые слова: <strong>#производная</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>Все для эффективной учебы</h2>
+            <p>Мощные инструменты для студентов, исследователей и преподавателей</p>
+        </div>
+
+        <div class="grid-features">
+            <div class="feature-card">
+                <div class="feature-icon">🎙️</div>
+                <h3>Аудиозапись HD</h3>
+                <p>Высококачественная запись лекций со встроенным фоновым диктофоном и индикатором громкости.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Gemini 2.5 Flash</h3>
+                <p>Распознавание речи любой сложности и мгновенная генерация понятных абзацев текста.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📡</div>
+                <h3>Офлайн Очередь</h3>
+                <p>Записывайте лекции без интернета — расшифровка запустится автоматически при появлении сети.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎧</div>
+                <h3>Плеер с ускорением</h3>
+                <p>Слушайте записи на скоростях 1.0x, 1.25x, 1.5x и 2.0x с точным таймингом.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🏷️</div>
+                <h3>Тегирование предметов</h3>
+                <p>Группируйте лекции по предметам (Математика, Физика, История) и ищите материалы за секунды.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📄</div>
+                <h3>Экспорт в PDF</h3>
+                <p>Сохраняйте готовые конспекты в формате PDF или делитесь с одногруппниками в один клик.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Live Demo -->
+    <section class="demo-section" id="demo">
+        <div class="section-header">
+            <h2>Пример расшифровки лекции</h2>
+            <p>Посмотрите, как Gemini ИИ структурирует устную речь преподавателя</p>
+        </div>
+
+        <div class="demo-container">
+            <div class="demo-controls">
+                <button class="demo-btn active" onclick="switchDemo(0)">Высшая математика</button>
+                <button class="demo-btn" onclick="switchDemo(1)">Физика и Кванты</button>
+                <button class="demo-btn" onclick="switchDemo(2)">История Университета</button>
+            </div>
+
+            <div class="demo-output" id="demoText">
+                <strong>1.</strong> Сегодня мы подробно рассмотрим понятие производной функции. Производная характеризует скорость изменения функции в данной точке.<br><br>
+                <strong>2.</strong> Главное правило дифференцирования заключается в том, что производная суммы равна сумме производных отдельных слагаемых.<br><br>
+                <strong>3.</strong> На следующем семинаре мы применим эти свойства для построения графиков сложных функций.
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div>© 2026 UniScribe. Разработано для студентов и академического сообщества.</div>
+        <div><a href="https://github.com/san4ezez/UniScribe" target="_blank" style="color: var(--primary);">GitHub Repository</a></div>
+    </footer>
+
+    <script>
+        const demos = [
+            `<strong>1.</strong> Сегодня мы подробно рассмотрим понятие производной функции. Производная характеризует скорость изменения функции в данной точке.<br><br><strong>2.</strong> Главное правило дифференцирования заключается в том, что производная суммы равна сумме производных отдельных слагаемых.<br><br><strong>3.</strong> На следующем семинаре мы применим эти свойства для построения графиков сложных функций.`,
+            `<strong>1.</strong> Основной закон квантовой механики описывается уравнением Шрёдингера, определяющим эволюцию волновой функции во времени.<br><br><strong>2.</strong> Принципиальным моментом является корпускулярно-волновой дуализм микрочастиц.<br><br><strong>3.</strong> Связанные состояния электрона в атоме водорода имеют дискретный спектр энергий.`,
+            `<strong>1.</strong> Основание первого университета в XVIII веке ознаменовало начало новой эпохи в развитии отечественного естествознания.<br><br><strong>2.</strong> Первые кафедры включали философию, юриспруденцию и медицинские науки.<br><br><strong>3.</strong> Студенты проводили диспуты и публичные лекции, привлекавшие ученых со всей Европы.`
+        ];
+
+        function switchDemo(index) {
+            document.querySelectorAll('.demo-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            document.getElementById('demoText').innerHTML = demos[index];
+        }
+    </script>
+</body>
+</html>

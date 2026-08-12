@@ -1,0 +1,6 @@
+{
+  "name": "Умный конспект",
+  "description": "Умный конспект с автозаписью лекций и мгновенной расшифровкой",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
