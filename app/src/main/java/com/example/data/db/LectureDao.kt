@@ -40,6 +40,9 @@ interface LectureDao {
     @Query("SELECT * FROM lectures WHERE status = 'PENDING_INTERNET' OR status = 'ERROR' ORDER BY dateTimestamp ASC")
     suspend fun getPendingLectures(): List<LectureEntity>
 
+    @Query("SELECT COUNT(*) FROM lectures")
+    suspend fun getLecturesCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLecture(lecture: LectureEntity): Long
 

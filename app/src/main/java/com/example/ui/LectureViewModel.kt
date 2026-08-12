@@ -46,6 +46,30 @@ class LectureViewModel(application: Application) : AndroidViewModel(application)
     private val _customApiKey = MutableStateFlow(prefs.getString("gemini_api_key", "") ?: "")
     val customApiKey: StateFlow<String> = _customApiKey.asStateFlow()
 
+    private val _customProxyUrl = MutableStateFlow(prefs.getString("gemini_proxy_url", "") ?: "")
+    val customProxyUrl: StateFlow<String> = _customProxyUrl.asStateFlow()
+
+    private val _useCloudflareDoh = MutableStateFlow(prefs.getBoolean("use_cloudflare_doh", true))
+    val useCloudflareDoh: StateFlow<Boolean> = _useCloudflareDoh.asStateFlow()
+
+    private val telemetryManager = com.example.data.TelemetryManager(application)
+
+    private val _telemetryInfo = MutableStateFlow<com.example.data.TelemetryInfo?>(null)
+    val telemetryInfo: StateFlow<com.example.data.TelemetryInfo?> = _telemetryInfo.asStateFlow()
+
+    private val _isRefreshingTelemetry = MutableStateFlow(false)
+    val isRefreshingTelemetry: StateFlow<Boolean> = _isRefreshingTelemetry.asStateFlow()
+
+    private val _sheetsWebhookUrl = MutableStateFlow(prefs.getString("sheets_webhook_url", "") ?: "")
+    val sheetsWebhookUrl: StateFlow<String> = _sheetsWebhookUrl.asStateFlow()
+
+    private val _isSyncingSheets = MutableStateFlow(false)
+    val isSyncingSheets: StateFlow<Boolean> = _isSyncingSheets.asStateFlow()
+
+    init {
+        refreshTelemetry()
+    }
+
     // Search query
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -220,6 +244,64 @@ class LectureViewModel(application: Application) : AndroidViewModel(application)
         _toastMessage.value = "Ключ Gemini API сохранен"
     }
 
+    fun setCustomProxyUrl(url: String) {
+        val cleaned = url.trim().removeSuffix("/")
+        _customProxyUrl.value = cleaned
+        prefs.edit().putString("gemini_proxy_url", cleaned).apply()
+        _toastMessage.value = if (cleaned.isNotBlank()) "Прокси-сервер Gemini сохранен" else "Сброшено на прямое подключение"
+        refreshTelemetry()
+    }
+
+    fun setUseCloudflareDoh(enabled: Boolean) {
+        _useCloudflareDoh.value = enabled
+        prefs.edit().putBoolean("use_cloudflare_doh", enabled).apply()
+        _toastMessage.value = if (enabled) "Включен Cloudflare 1.1.1.1 DoH режим" else "DoH отключен"
+        refreshTelemetry()
+    }
+
+    fun refreshTelemetry() {
+        viewModelScope.launch {
+            _isRefreshingTelemetry.value = true
+            try {
+                val lecturesCount = repository.getLecturesCount()
+                val stats = getStorageStats()
+                val info = telemetryManager.collectTelemetry(
+                    totalLectures = lecturesCount,
+                    storageMb = stats.second,
+                    customProxyUrl = _customProxyUrl.value,
+                    useDoh = _useCloudflareDoh.value
+                )
+                _telemetryInfo.value = info
+            } catch (e: Exception) {
+                _toastMessage.value = "Не удалось обновить статистику"
+            } finally {
+                _isRefreshingTelemetry.value = false
+            }
+        }
+    }
+
+    fun copyTelemetryReport() {
+        val info = _telemetryInfo.value ?: return
+        val report = """
+            📊 [UniScribe] Анонимная диагностика устройства
+            ----------------------------------------------
+            📱 Версия Android: ${info.androidVersion}
+            🛠️ Модель устройства: ${info.deviceModel}
+            📅 Дата первого запуска: ${info.firstLaunchDate}
+            📦 Версия приложения: ${info.appVersion}
+            🌐 Внешний IP: ${info.publicIp}
+            📍 Локация IP: ${info.ipLocation}
+            ⚙️ ЦП Архитектура: ${info.cpuArch}
+            📶 Сеть: ${info.networkType}
+            📚 Всего лекций: ${info.totalLecturesCount}
+            💾 Занято аудио: %.1f МБ
+            🔒 Режим прокси/DNS: ${info.proxyMode}
+            ----------------------------------------------
+        """.trimIndent().format(info.totalStorageMb)
+
+        copyToClipboard(report)
+    }
+
     fun copyToClipboard(text: String) {
         try {
             val clipboard = getApplication<Application>().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
@@ -228,6 +310,43 @@ class LectureViewModel(application: Application) : AndroidViewModel(application)
             _toastMessage.value = "Текст скопирован в буфер обмена!"
         } catch (e: Exception) {
             _toastMessage.value = "Ошибка при копировании"
+        }
+    }
+
+    fun setSheetsWebhookUrl(url: String) {
+        val cleaned = url.trim()
+        _sheetsWebhookUrl.value = cleaned
+        prefs.edit().putString("sheets_webhook_url", cleaned).apply()
+    }
+
+    fun sendTelemetryToGoogleSheets() {
+        viewModelScope.launch {
+            _isSyncingSheets.value = true
+            try {
+                var info = _telemetryInfo.value
+                if (info == null) {
+                    val lecturesCount = repository.getLecturesCount()
+                    val stats = getStorageStats()
+                    info = telemetryManager.collectTelemetry(
+                        totalLectures = lecturesCount,
+                        storageMb = stats.second,
+                        customProxyUrl = _customProxyUrl.value,
+                        useDoh = _useCloudflareDoh.value
+                    )
+                    _telemetryInfo.value = info
+                }
+                val url = _sheetsWebhookUrl.value
+                val success = telemetryManager.sendToGoogleSheets(info, url)
+                if (success) {
+                    _toastMessage.value = "Данные успешно отправлены в Google Таблицу!"
+                } else {
+                    _toastMessage.value = "Не удалось отправить. Проверьте Webhook URL."
+                }
+            } catch (e: Exception) {
+                _toastMessage.value = "Ошибка: ${e.localizedMessage}"
+            } finally {
+                _isSyncingSheets.value = false
+            }
         }
     }
 

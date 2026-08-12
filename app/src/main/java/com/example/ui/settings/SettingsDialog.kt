@@ -1,5 +1,6 @@
 package com.example.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,19 +15,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SdStorage
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -35,6 +44,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -61,10 +71,18 @@ fun SettingsBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val customApiKey by viewModel.customApiKey.collectAsState()
+    val customProxyUrl by viewModel.customProxyUrl.collectAsState()
+    val useCloudflareDoh by viewModel.useCloudflareDoh.collectAsState()
+    val telemetryInfo by viewModel.telemetryInfo.collectAsState()
+    val isRefreshingTelemetry by viewModel.isRefreshingTelemetry.collectAsState()
+    val sheetsWebhookUrl by viewModel.sheetsWebhookUrl.collectAsState()
+    val isSyncingSheets by viewModel.isSyncingSheets.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
 
     var apiKeyInput by remember(customApiKey) { mutableStateOf(customApiKey) }
+    var proxyUrlInput by remember(customProxyUrl) { mutableStateOf(customProxyUrl) }
+    var sheetsUrlInput by remember(sheetsWebhookUrl) { mutableStateOf(sheetsWebhookUrl) }
     var storageStats by remember { mutableStateOf(viewModel.getStorageStats()) }
 
     ModalBottomSheet(
@@ -122,39 +140,14 @@ fun SettingsBottomSheet(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    val isUsingDefault = customApiKey.isBlank()
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isUsingDefault) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "1. Встроенный ключ (по умолчанию):",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Используется предустановленный ключ AQ.Ab8RN6I... По умолчанию все функции работают сразу из коробки без вопросов.",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
-                        text = "2. Собственный API Ключ от Google AI Studio:",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        text = "Gemini API Ключ (aistudio.google.com)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Если хотите использовать свои личные суточные лимиты Gemini API, укажите свой ключ ниже:",
+                        text = "Получите бесплатный Gemini API ключ на сайте Google AI Studio (aistudio.google.com/app/apikey). Ключ начинается с 'AIzaSy...':",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -164,7 +157,7 @@ fun SettingsBottomSheet(
                     OutlinedTextField(
                         value = apiKeyInput,
                         onValueChange = { apiKeyInput = it },
-                        placeholder = { Text("Вставьте ваш AI Studio API Key...") },
+                        placeholder = { Text("AIzaSy...") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -176,14 +169,14 @@ fun SettingsBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (!isUsingDefault) {
+                        if (customApiKey.isNotBlank()) {
                             OutlinedButton(
                                 onClick = {
                                     apiKeyInput = ""
                                     viewModel.setCustomApiKey("")
                                 }
                             ) {
-                                Text("Вернуть встроенный ключ", fontSize = 11.sp)
+                                Text("Очистить ключ", fontSize = 11.sp)
                             }
                         } else {
                             Spacer(modifier = Modifier.width(1.dp))
@@ -192,7 +185,129 @@ fun SettingsBottomSheet(
                         Button(
                             onClick = { viewModel.setCustomApiKey(apiKeyInput.trim()) }
                         ) {
-                            Text("Сохранить свой ключ", fontSize = 12.sp)
+                            Text("Сохранить API ключ", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 2. Proxy Section (Работа в РФ & Cloudflare 1.1.1.1)
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Dns,
+                                contentDescription = "Proxy",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Обход блокировок в РФ (1.1.1.1)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+
+                        Switch(
+                            checked = useCloudflareDoh,
+                            onCheckedChange = { viewModel.setUseCloudflareDoh(it) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Включает авто-перенаправление и защиту Cloudflare 1.1.1.1 DoH для безопасного доступа к Gemini без блокировок.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Альтернативный Прокси-сервер / Зеркало:",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                proxyUrlInput = "https://proxy.vortim.ru"
+                                viewModel.setCustomProxyUrl("https://proxy.vortim.ru")
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🌐 Публичное зеркало", fontSize = 10.sp, maxLines = 1)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                proxyUrlInput = ""
+                                viewModel.setCustomProxyUrl("")
+                                viewModel.setUseCloudflareDoh(true)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("⚡ 1.1.1.1 DoH", fontSize = 10.sp, maxLines = 1)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = proxyUrlInput,
+                        onValueChange = { proxyUrlInput = it },
+                        placeholder = { Text("Пример: https://my-worker.subdomain.workers.dev") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (customProxyUrl.isNotBlank()) {
+                            OutlinedButton(
+                                onClick = {
+                                    proxyUrlInput = ""
+                                    viewModel.setCustomProxyUrl("")
+                                }
+                            ) {
+                                Text("Прямое подключение", fontSize = 11.sp)
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.width(1.dp))
+                        }
+
+                        Button(
+                            onClick = { viewModel.setCustomProxyUrl(proxyUrlInput.trim()) }
+                        ) {
+                            Text("Сохранить прокси", fontSize = 12.sp)
                         }
                     }
                 }
@@ -311,7 +426,235 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. App Info
+            // 4. Anonymous Device Telemetry & Diagnostics Table
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Analytics,
+                                contentDescription = "Telemetry Table",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Анонимные данные и Диагностика",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+
+                        if (isRefreshingTelemetry) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            IconButton(
+                                onClick = { viewModel.refreshTelemetry() },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh Telemetry",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Сводная таблица параметров устройства и сети для анонимного анализа и отладки:",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Structured Table
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            val info = telemetryInfo
+                            val tableRows = listOf(
+                                "📱 Версия Android" to (info?.androidVersion ?: "Загрузка..."),
+                                "📅 Дата 1-го запуска" to (info?.firstLaunchDate ?: "Загрузка..."),
+                                "🌐 Внешний IP" to (info?.publicIp ?: "Определяется..."),
+                                "📍 Гео / Провайдер" to (info?.ipLocation ?: "Определяется..."),
+                                "🛠️ Модель устройства" to (info?.deviceModel ?: "Загрузка..."),
+                                "⚙️ Архитектура ЦП" to (info?.cpuArch ?: "Загрузка..."),
+                                "📦 Версия ПО" to (info?.appVersion ?: "1.2.0"),
+                                "📚 Лекций создано" to "${info?.totalLecturesCount ?: 0} шт.",
+                                "💾 Память аудио" to "%.1f МБ".format(info?.totalStorageMb ?: 0.0),
+                                "📶 Тип сети" to (info?.networkType ?: "Подключено"),
+                                "🔒 Режим сети/DNS" to (info?.proxyMode ?: "1.1.1.1 DoH")
+                            )
+
+                            tableRows.forEachIndexed { index, (label, value) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            if (index % 2 == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+                                            else MaterialTheme.colorScheme.surface
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = value,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                                if (index < tableRows.size - 1) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.refreshTelemetry() }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Обновить IP", fontSize = 11.sp)
+                        }
+
+                        Button(
+                            onClick = { viewModel.copyTelemetryReport() }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy Report",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Скопировать отчет", fontSize = 11.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "📊 Автоматическая отправка в Google Таблицу:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Вставьте URL Webhook от Google Apps Script, чтобы анонимная аналитика записывалась в вашу Google Таблицу:",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = sheetsUrlInput,
+                        onValueChange = {
+                            sheetsUrlInput = it
+                            viewModel.setSheetsWebhookUrl(it)
+                        },
+                        label = { Text("Google Apps Script Webhook URL", fontSize = 11.sp) },
+                        placeholder = { Text("https://script.google.com/macros/s/.../exec", fontSize = 10.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val scriptCode = """
+                                    function doPost(e) {
+                                      var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+                                      var data = JSON.parse(e.postData.contents);
+                                      sheet.appendRow([
+                                        new Date(),
+                                        data.androidVersion,
+                                        data.deviceModel,
+                                        data.publicIp,
+                                        data.ipLocation,
+                                        data.networkType,
+                                        data.totalLecturesCount,
+                                        data.totalStorageMb,
+                                        data.proxyMode
+                                      ]);
+                                      return ContentService.createTextOutput("OK");
+                                    }
+                                """.trimIndent()
+                                viewModel.copyToClipboard(scriptCode)
+                            }
+                        ) {
+                            Text("📋 Копировать Apps Script", fontSize = 10.sp)
+                        }
+
+                        Button(
+                            onClick = { viewModel.sendTelemetryToGoogleSheets() },
+                            enabled = !isSyncingSheets
+                        ) {
+                            if (isSyncingSheets) {
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("Отправить в Таблицу", fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 5. App Info
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(

@@ -11,14 +11,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [LectureEntity::class, TagEntity::class, LectureTagCrossRef::class],
-    version = 1,
+    entities = [LectureEntity::class, TagEntity::class, LectureTagCrossRef::class, TelemetryEntity::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun lectureDao(): LectureDao
     abstract fun tagDao(): TagDao
+    abstract fun telemetryDao(): TelemetryDao
 
     companion object {
         @Volatile

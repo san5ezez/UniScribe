@@ -21,7 +21,7 @@ android {
         }
 
         val envKey = System.getenv("GEMINI_API_KEY")
-        val geminiApiKey: String = if (!envKey.isNullOrBlank() && envKey != "MY_GEMINI_API_KEY") envKey else "AQ.Ab8RN6IJzWO6vgtMM1_9a0Qb7tvaK7_hgjuGkRLYN91Xh9ZGHA"
+        val geminiApiKey: String = if (!envKey.isNullOrBlank() && envKey.startsWith("AIza")) envKey else ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 

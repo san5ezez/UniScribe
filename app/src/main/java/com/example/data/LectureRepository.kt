@@ -167,6 +167,10 @@ class LectureRepository(private val context: Context) {
         lectureDao.deleteLecture(lectureWithTags.lecture)
     }
 
+    suspend fun getLecturesCount(): Int = withContext(Dispatchers.IO) {
+        lectureDao.getLecturesCount()
+    }
+
     // Tag operations
     suspend fun addTag(name: String, colorHex: String) = withContext(Dispatchers.IO) {
         val tag = TagEntity(name = name.trim(), colorHex = colorHex)
