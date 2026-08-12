@@ -4,11 +4,11 @@
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin-purple.svg)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Gemini API](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange.svg)](https://ai.google.dev/)
-[![GitHub Pages](https://img.shields.io/badge/Website-GitHub%20Pages-brightgreen.svg)](https://san4ezez.github.io/UniScribe/)
+[![GitHub Pages](https://img.shields.io/badge/Website-GitHub%20Pages-brightgreen.svg)](https://san5ezez.github.io/UniScribe/)
 
 **UniScribe (Умный конспект)** — это современное Android-приложение для студентов и преподавателей, превращающее аудиозаписи лекций в структурированные текстовые конспекты с помощью моделей искусственного интеллекта Google Gemini 2.5 Flash.
 
-🌐 **Официальный сайт приложения:** [san4ezez.github.io/UniScribe](https://san4ezez.github.io/UniScribe/)
+🌐 **Официальный сайт приложения:** [san5ezez.github.io/UniScribe](https://san5ezez.github.io/UniScribe/)
 
 ---
 
@@ -53,7 +53,7 @@
 
 1. Клонируйте репозиторий:
    ```bash
-   git clone https://github.com/san4ezez/UniScribe.git
+   git clone https://github.com/san5ezez/UniScribe.git
    cd UniScribe
    ```
 
@@ -72,7 +72,7 @@
 
 ## 📱 Скриншоты и интерфейс
 
-Посетите наш промо-сайт [https://san4ezez.github.io/UniScribe/](https://san4ezez.github.io/UniScribe/) для просмотра интерактивного демо и интерфейса.
+Посетите наш промо-сайт [https://san5ezez.github.io/UniScribe/](https://san5ezez.github.io/UniScribe/) для просмотра интерактивного демо и интерфейса.
 
 ---
 
