@@ -60,14 +60,45 @@ class LectureViewModel(application: Application) : AndroidViewModel(application)
     private val _isRefreshingTelemetry = MutableStateFlow(false)
     val isRefreshingTelemetry: StateFlow<Boolean> = _isRefreshingTelemetry.asStateFlow()
 
-    private val _sheetsWebhookUrl = MutableStateFlow(prefs.getString("sheets_webhook_url", "") ?: "")
+    private val defaultWebhookUrl = "https://script.google.com/macros/s/AKfycbzABj0RxjL5ULLZu4hfERW7ujE8DNOFlecVIKYCxnN8N3VJsIDd82tN_AcQilCfeDee/exec"
+    private val _sheetsWebhookUrl = MutableStateFlow(prefs.getString("sheets_webhook_url", defaultWebhookUrl) ?: defaultWebhookUrl)
     val sheetsWebhookUrl: StateFlow<String> = _sheetsWebhookUrl.asStateFlow()
 
     private val _isSyncingSheets = MutableStateFlow(false)
     val isSyncingSheets: StateFlow<Boolean> = _isSyncingSheets.asStateFlow()
 
+    private val _showTelemetryConsentDialog = MutableStateFlow(false)
+    val showTelemetryConsentDialog: StateFlow<Boolean> = _showTelemetryConsentDialog.asStateFlow()
+
     init {
         refreshTelemetry()
+        checkFirstLaunchTelemetryPrompt()
+    }
+
+    private fun checkFirstLaunchTelemetryPrompt() {
+        val promptShown = prefs.getBoolean("telemetry_prompt_shown", false)
+        if (!promptShown) {
+            _showTelemetryConsentDialog.value = true
+        }
+    }
+
+    fun onTelemetryConsentResult(granted: Boolean) {
+        prefs.edit()
+            .putBoolean("telemetry_prompt_shown", true)
+            .putBoolean("telemetry_enabled", granted)
+            .apply()
+        _showTelemetryConsentDialog.value = false
+        if (granted) {
+            sendTelemetryToGoogleSheets()
+        } else {
+            _toastMessage.value = "Отправка телеметрии пропущена"
+        }
+    }
+
+    fun resetFirstLaunchPrompt() {
+        prefs.edit().putBoolean("telemetry_prompt_shown", false).apply()
+        _showTelemetryConsentDialog.value = true
+        _toastMessage.value = "Диалог первого запуска сброшен"
     }
 
     // Search query
