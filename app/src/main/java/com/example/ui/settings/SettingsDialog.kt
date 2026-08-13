@@ -71,18 +71,11 @@ fun SettingsBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val customApiKey by viewModel.customApiKey.collectAsState()
-    val customProxyUrl by viewModel.customProxyUrl.collectAsState()
     val useCloudflareDoh by viewModel.useCloudflareDoh.collectAsState()
-    val telemetryInfo by viewModel.telemetryInfo.collectAsState()
-    val isRefreshingTelemetry by viewModel.isRefreshingTelemetry.collectAsState()
-    val sheetsWebhookUrl by viewModel.sheetsWebhookUrl.collectAsState()
-    val isSyncingSheets by viewModel.isSyncingSheets.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
 
     var apiKeyInput by remember(customApiKey) { mutableStateOf(customApiKey) }
-    var proxyUrlInput by remember(customProxyUrl) { mutableStateOf(customProxyUrl) }
-    var sheetsUrlInput by remember(sheetsWebhookUrl) { mutableStateOf(sheetsWebhookUrl) }
     var storageStats by remember { mutableStateOf(viewModel.getStorageStats()) }
 
     ModalBottomSheet(
@@ -193,7 +186,7 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Proxy Section (Работа в РФ & Cloudflare 1.1.1.1)
+            // 2. WARP Proxy Section
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -210,13 +203,13 @@ fun SettingsBottomSheet(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Dns,
-                                contentDescription = "Proxy",
+                                contentDescription = "WARP",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Обход блокировок в РФ (1.1.1.1)",
+                                text = "Обход блокировок (WARP / 1.1.1.1)",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp
                             )
@@ -231,91 +224,16 @@ fun SettingsBottomSheet(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Включает авто-перенаправление и защиту Cloudflare 1.1.1.1 DoH для безопасного доступа к Gemini без блокировок.",
+                        text = "Включает обход ограничений и защищенное подключение через Cloudflare 1.1.1.1 DoH для безопасной работы Gemini.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "Альтернативный Прокси-сервер / Зеркало:",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                proxyUrlInput = "https://proxy.vortim.ru"
-                                viewModel.setCustomProxyUrl("https://proxy.vortim.ru")
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("🌐 Публичное зеркало", fontSize = 10.sp, maxLines = 1)
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                proxyUrlInput = ""
-                                viewModel.setCustomProxyUrl("")
-                                viewModel.setUseCloudflareDoh(true)
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("⚡ 1.1.1.1 DoH", fontSize = 10.sp, maxLines = 1)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = proxyUrlInput,
-                        onValueChange = { proxyUrlInput = it },
-                        placeholder = { Text("Пример: https://my-worker.subdomain.workers.dev") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (customProxyUrl.isNotBlank()) {
-                            OutlinedButton(
-                                onClick = {
-                                    proxyUrlInput = ""
-                                    viewModel.setCustomProxyUrl("")
-                                }
-                            ) {
-                                Text("Прямое подключение", fontSize = 11.sp)
-                            }
-                        } else {
-                            Spacer(modifier = Modifier.width(1.dp))
-                        }
-
-                        Button(
-                            onClick = { viewModel.setCustomProxyUrl(proxyUrlInput.trim()) }
-                        ) {
-                            Text("Сохранить прокси", fontSize = 12.sp)
-                        }
-                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Theme Selection
+            // 3. Theme Selection
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -362,7 +280,7 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Storage & Memory
+            // 4. Storage & Memory
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -419,234 +337,6 @@ fun SettingsBottomSheet(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Очистить кэш", fontSize = 11.sp)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 4. Anonymous Device Telemetry & Diagnostics Table
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Analytics,
-                                contentDescription = "Telemetry Table",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Анонимные данные и Диагностика",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
-                            )
-                        }
-
-                        if (isRefreshingTelemetry) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        } else {
-                            IconButton(
-                                onClick = { viewModel.refreshTelemetry() },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Refresh Telemetry",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Сводная таблица параметров устройства и сети для анонимного анализа и отладки:",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Structured Table
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column {
-                            val info = telemetryInfo
-                            val tableRows = listOf(
-                                "📱 Версия Android" to (info?.androidVersion ?: "Загрузка..."),
-                                "📅 Дата 1-го запуска" to (info?.firstLaunchDate ?: "Загрузка..."),
-                                "🌐 Внешний IP" to (info?.publicIp ?: "Определяется..."),
-                                "📍 Гео / Провайдер" to (info?.ipLocation ?: "Определяется..."),
-                                "🛠️ Модель устройства" to (info?.deviceModel ?: "Загрузка..."),
-                                "⚙️ Архитектура ЦП" to (info?.cpuArch ?: "Загрузка..."),
-                                "📦 Версия ПО" to (info?.appVersion ?: "1.2.0"),
-                                "📚 Лекций создано" to "${info?.totalLecturesCount ?: 0} шт.",
-                                "💾 Память аудио" to "%.1f МБ".format(info?.totalStorageMb ?: 0.0),
-                                "📶 Тип сети" to (info?.networkType ?: "Подключено"),
-                                "🔒 Режим сети/DNS" to (info?.proxyMode ?: "1.1.1.1 DoH")
-                            )
-
-                            tableRows.forEachIndexed { index, (label, value) ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            if (index % 2 == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
-                                            else MaterialTheme.colorScheme.surface
-                                        )
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = label,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = value,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        maxLines = 1,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                    )
-                                }
-                                if (index < tableRows.size - 1) {
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(
-                            onClick = { viewModel.refreshTelemetry() }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Обновить IP", fontSize = 11.sp)
-                        }
-
-                        Button(
-                            onClick = { viewModel.copyTelemetryReport() }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy Report",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Скопировать отчет", fontSize = 11.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "📊 Автоматическая отправка в Google Таблицу:",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "Вставьте URL Webhook от Google Apps Script, чтобы анонимная аналитика записывалась в вашу Google Таблицу:",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = sheetsUrlInput,
-                        onValueChange = {
-                            sheetsUrlInput = it
-                            viewModel.setSheetsWebhookUrl(it)
-                        },
-                        label = { Text("Google Apps Script Webhook URL", fontSize = 11.sp) },
-                        placeholder = { Text("https://script.google.com/macros/s/.../exec", fontSize = 10.sp) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                val scriptCode = """
-                                    function doPost(e) {
-                                      var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-                                      var data = JSON.parse(e.postData.contents);
-                                      sheet.appendRow([
-                                        new Date(),
-                                        data.androidVersion,
-                                        data.deviceModel,
-                                        data.publicIp,
-                                        data.ipLocation,
-                                        data.networkType,
-                                        data.totalLecturesCount,
-                                        data.totalStorageMb,
-                                        data.proxyMode
-                                      ]);
-                                      return ContentService.createTextOutput("OK");
-                                    }
-                                """.trimIndent()
-                                viewModel.copyToClipboard(scriptCode)
-                            }
-                        ) {
-                            Text("📋 Копировать Apps Script", fontSize = 10.sp)
-                        }
-
-                        Button(
-                            onClick = { viewModel.sendTelemetryToGoogleSheets() },
-                            enabled = !isSyncingSheets
-                        ) {
-                            if (isSyncingSheets) {
-                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                            } else {
-                                Text("Отправить в Таблицу", fontSize = 11.sp)
-                            }
                         }
                     }
                 }

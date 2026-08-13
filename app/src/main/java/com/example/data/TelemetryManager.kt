@@ -157,30 +157,34 @@ class TelemetryManager(private val context: Context) {
         return telemetryInfo
     }
 
-    suspend fun sendToGoogleSheets(info: TelemetryInfo, webhookUrl: String): Boolean = withContext(Dispatchers.IO) {
-        if (webhookUrl.isBlank()) return@withContext false
+    companion object {
+        const val DEFAULT_ENDPOINT = "https://script.google.com/macros/s/AKfycbz3hFcyzhVydGo0qC2VXue4cdqF_005v1MKc4NPW4NCdRvCuZA4mmDwFkXJ4SpNA19q/exec"
+    }
+
+    suspend fun sendToGoogleSheets(
+        info: TelemetryInfo,
+        webhookUrl: String = DEFAULT_ENDPOINT
+    ): Boolean = withContext(Dispatchers.IO) {
+        val targetUrl = webhookUrl.ifBlank { DEFAULT_ENDPOINT }
         try {
             val json = JSONObject().apply {
                 put("androidVersion", info.androidVersion)
-                put("firstLaunchDate", info.firstLaunchDate)
+                put("deviceModel", info.deviceModel)
                 put("publicIp", info.publicIp)
                 put("ipLocation", info.ipLocation)
-                put("deviceModel", info.deviceModel)
-                put("cpuArch", info.cpuArch)
-                put("appVersion", info.appVersion)
+                put("networkType", info.networkType)
                 put("totalLecturesCount", info.totalLecturesCount)
                 put("totalStorageMb", "%.1f MB".format(info.totalStorageMb))
-                put("networkType", info.networkType)
                 put("proxyMode", info.proxyMode)
-                put("timestamp", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()))
             }
 
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val body = json.toString().toRequestBody(mediaType)
 
             val request = Request.Builder()
-                .url(webhookUrl)
+                .url(targetUrl)
                 .post(body)
+                .addHeader("Content-Type", "application/json; charset=utf-8")
                 .build()
 
             val response = client.newCall(request).execute()
